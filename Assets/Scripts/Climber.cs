@@ -7,13 +7,11 @@ public class Climber : MonoBehaviour
     private List<Gene> actionGenes;
     private int currentActionIndex;
     private float nextActionTime;
-    private float timeToLive = 10f;
     private HingeJoint grabJoint;
     private Rigidbody body;
 
     public ClimberGenetics Genetics;
-
-    public float TimeToLive { get { return timeToLive; } }
+    public float TimeToLive = 5f;
 
     private bool IsDone()
     {
@@ -21,7 +19,7 @@ public class Climber : MonoBehaviour
             return true;
         else if (transform.position.y > GeneticAlgorithm.Instance.Ceiling)
             return true;
-        else if (timeToLive <= 0f)
+        else if (TimeToLive <= 0f)
             return true;
         return false;
     }
@@ -42,7 +40,7 @@ public class Climber : MonoBehaviour
                 grabJoint = gameObject.AddComponent<HingeJoint>();
                 grabJoint.axis = new Vector3(0f, 0f, 1f);
                 grabJoint.enablePreprocessing = false;
-                grabJoint.anchor = grabActionGene.LocalGrabPoint;
+                grabJoint.anchor = grabActionGene.LocalPoint;
             }
         }
         else if (actionGene.Type == GeneType.ReleaseAction)
@@ -59,7 +57,7 @@ public class Climber : MonoBehaviour
 
             if (grabJoint != null)
             {
-                Vector3 worldPosition = transform.TransformPoint(swingActionGene.LocalApplyAtPoint);
+                Vector3 worldPosition = transform.TransformPoint(swingActionGene.LocalPoint);
                 Vector3 localNormal = new Vector3((float)swingActionGene.Direction, 0f, 0f);
                 Vector3 worldNormal = transform.TransformDirection(localNormal);
                 Vector3 worldForce = worldNormal * swingActionGene.Strength;
@@ -96,7 +94,7 @@ public class Climber : MonoBehaviour
         else
         {
             ProcessActions();
-            timeToLive = Mathf.Max(timeToLive - Time.fixedDeltaTime, 0f);
+            TimeToLive = Mathf.Max(TimeToLive - Time.fixedDeltaTime, 0f);
         }
     }
 }

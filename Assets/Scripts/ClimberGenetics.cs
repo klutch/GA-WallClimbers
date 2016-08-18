@@ -4,6 +4,7 @@ using System.Collections.Generic;
 public class ClimberGenetics
 {
     public List<Gene> Chromosome;
+    public float FitnessScore;
 
     public ClimberGenetics()
     {
@@ -45,17 +46,17 @@ public class BodyShapeGene : Gene
 
 public class GrabActionGene : Gene
 {
-    public Vector3 LocalGrabPoint;
+    public Vector3 LocalPoint;
 
     public GrabActionGene(Vector3 localGrabPoint)
     {
         Type = GeneType.GrabAction;
-        LocalGrabPoint = localGrabPoint;
+        LocalPoint = localGrabPoint;
     }
 
     public override string ToString()
     {
-        return "GrabActionGene - LocalPoint: " + LocalGrabPoint;
+        return "GrabActionGene - LocalPoint: " + LocalPoint;
     }
 }
 
@@ -74,21 +75,21 @@ public class ReleaseActionGene : Gene
 
 public class SwingActionGene : Gene
 {
-    public Vector3 LocalApplyAtPoint;
+    public Vector3 LocalPoint;
     public int Direction; // -1 for left, 1 for right
     public float Strength;
 
-    public SwingActionGene(Vector3 localApplyAtPoint, int direction, float strength)
+    public SwingActionGene(Vector3 localPoint, int direction, float strength)
     {
         Type = GeneType.SwingAction;
         Direction = direction;
         Strength = strength;
-        LocalApplyAtPoint = localApplyAtPoint;
+        LocalPoint = localPoint;
     }
 
     public override string ToString()
     {
-        return "SwingActionGene - LocalPoint: " + LocalApplyAtPoint +
+        return "SwingActionGene - LocalPoint: " + LocalPoint +
             ", Direction: " + (Direction == -1 ? "left" : "right") +
             ", Strength: " + Strength;
     }
