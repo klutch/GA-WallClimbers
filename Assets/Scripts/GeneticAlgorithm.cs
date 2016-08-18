@@ -3,8 +3,17 @@ using System.Collections.Generic;
 
 public class GeneticAlgorithm : MonoBehaviour
 {
-    private List<ClimberGenetics> Population;
+    public static GeneticAlgorithm Instance;
 
+    private List<ClimberGenetics> population;
+    private bool isRunningGenerations;
+    private bool isRunningFitnessTest;
+    private int currentPopulationIndex;
+    private Climber currentClimber;
+    private Transform objectsContainer;
+    private Dictionary<ClimberGenetics, float> fitnessScores;
+
+    public GameObject ClimberPrefab;
     public Vector3 SpawnPosition;
     public float CrossoverRate = 0.7f;
     public int StartingPopulationSize = 20;
@@ -25,10 +34,12 @@ public class GeneticAlgorithm : MonoBehaviour
     public float MaxBodyHeight = 2f;
     public float MinSwingStrength = 0.05f;
     public float MaxSwingStrength = 10f;
+    public float Floor = -2f;
+    public float Ceiling = 42f;
 
     private void CreateRandomPopulation()
     {
-        Population = new List<ClimberGenetics>(StartingPopulationSize);
+        population = new List<ClimberGenetics>(StartingPopulationSize);
 
         for (int i = 0; i < StartingPopulationSize; i++)
         {
@@ -77,18 +88,89 @@ public class GeneticAlgorithm : MonoBehaviour
                 genetics.Chromosome.Add(actionGene);
             }
 
-            Population.Add(genetics);
+            population.Add(genetics);
         }
 
-        Logger.Add("Created random genetic information for a population of " + Population.Count);
+        Logger.Add("Created random genetic information for a population of " + population.Count);
+    }
+
+    private void StartFitnessTest()
+    {
+        GameObject climberObj;
+        Climber climber;
+
+        isRunningFitnessTest = true;
+
+        climberObj = Instantiate<GameObject>(ClimberPrefab);
+        climberObj.transform.parent = objectsContainer;
+        climberObj.transform.position = SpawnPosition;
+        climber = climberObj.GetComponent<Climber>();
+        climber.Genetics = population[currentPopulationIndex];
+        currentClimber = climber;
+
+        //Logger.Add("Starting fitness test");
+    }
+
+    private float GetFitnessScore(Climber climber)
+    {
+        if (climber.transform.position.y > Floor)
+            return climber.transform.position.y + climber.TimeToLive;
+        else
+            return 0f;
+    }
+
+    public void EndFitnessTest()
+    {
+        if (currentClimber == null)
+            return;
+
+        float score = GetFitnessScore(currentClimber);
+
+        Logger.Add("Fitness test ended with a score of " + (int)score);
+        isRunningFitnessTest = false;
+        fitnessScores.Add(currentClimber.Genetics, score);
+        Destroy(currentClimber.gameObject);
+        currentClimber = null;
+        currentPopulationIndex++;
+    }
+
+    private void HandleInput()
+    {
+        if (!isRunningGenerations && Input.GetKeyDown(KeyCode.Return))
+        {
+            isRunningGenerations = true;
+            fitnessScores.Clear();
+            StartFitnessTest();
+        }
     }
 
     void Start()
     {
+        Instance = this;
+        objectsContainer = GameObject.FindGameObjectWithTag("Objects").transform;
+        fitnessScores = new Dictionary<ClimberGenetics, float>();
+
         CreateRandomPopulation();
     }
 
     void Update()
     {
+        HandleInput();
+
+        if (isRunningGenerations)
+        {
+            if (!isRunningFitnessTest)
+            {
+                if (currentPopulationIndex < population.Count)
+                {
+                    StartFitnessTest();
+                }
+                else
+                {
+                    isRunningGenerations = false;
+                    currentPopulationIndex = 0;
+                }
+            }
+        }
     }
 }
