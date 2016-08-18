@@ -36,6 +36,11 @@ public class BodyShapeGene : Gene
         Width = width;
         Height = height;
     }
+
+    public override string ToString()
+    {
+        return "BodyShapeGene - Width: " + Width + ", Height: " + Height;
+    }
 }
 
 public class GrabActionGene : Gene
@@ -47,6 +52,11 @@ public class GrabActionGene : Gene
         Type = GeneType.GrabAction;
         LocalGrabPoint = localGrabPoint;
     }
+
+    public override string ToString()
+    {
+        return "GrabActionGene - LocalPoint: " + LocalGrabPoint;
+    }
 }
 
 public class ReleaseActionGene : Gene
@@ -54,6 +64,11 @@ public class ReleaseActionGene : Gene
     public ReleaseActionGene()
     {
         Type = GeneType.ReleaseAction;
+    }
+
+    public override string ToString()
+    {
+        return "ReleaseActionGene";
     }
 }
 
@@ -70,6 +85,13 @@ public class SwingActionGene : Gene
         Strength = strength;
         LocalApplyAtPoint = localApplyAtPoint;
     }
+
+    public override string ToString()
+    {
+        return "SwingActionGene - LocalPoint: " + LocalApplyAtPoint +
+            ", Direction: " + (Direction == -1 ? "left" : "right") +
+            ", Strength: " + Strength;
+    }
 }
 
 public class NonActionGene : Gene
@@ -80,5 +102,10 @@ public class NonActionGene : Gene
     {
         Type = GeneType.NonAction;
         Time = time;
+    }
+
+    public override string ToString()
+    {
+        return "NonActionGene - Time: " + Time;
     }
 }

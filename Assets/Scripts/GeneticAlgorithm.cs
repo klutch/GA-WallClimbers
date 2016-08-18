@@ -12,6 +12,7 @@ public class GeneticAlgorithm : MonoBehaviour
     private Climber currentClimber;
     private Transform objectsContainer;
     private Dictionary<ClimberGenetics, float> fitnessScores;
+    private bool paused;
 
     public GameObject ClimberPrefab;
     public Vector3 SpawnPosition;
@@ -107,8 +108,6 @@ public class GeneticAlgorithm : MonoBehaviour
         climber = climberObj.GetComponent<Climber>();
         climber.Genetics = population[currentPopulationIndex];
         currentClimber = climber;
-
-        //Logger.Add("Starting fitness test");
     }
 
     private float GetFitnessScore(Climber climber)
@@ -126,7 +125,7 @@ public class GeneticAlgorithm : MonoBehaviour
 
         float score = GetFitnessScore(currentClimber);
 
-        Logger.Add("Fitness test ended with a score of " + (int)score);
+        Logger.Add("Climber [" + currentPopulationIndex + "] fitness: " + (int)score);
         isRunningFitnessTest = false;
         fitnessScores.Add(currentClimber.Genetics, score);
         Destroy(currentClimber.gameObject);
@@ -141,6 +140,27 @@ public class GeneticAlgorithm : MonoBehaviour
             isRunningGenerations = true;
             fitnessScores.Clear();
             StartFitnessTest();
+        }
+
+        if (isRunningGenerations && !paused)
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                paused = true;
+                Time.timeScale = 0f;
+                Logger.Add("Genes for climber [" + currentPopulationIndex + "]");
+
+                foreach (Gene gene in currentClimber.Genetics.Chromosome)
+                    Logger.Add("   " + gene.ToString());
+            }
+        }
+        else if (isRunningFitnessTest && paused)
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                paused = false;
+                Time.timeScale = 1f;
+            }
         }
     }
 
