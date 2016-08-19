@@ -36,6 +36,97 @@ public class GeneticAlgorithm : MonoBehaviour
     public float Floor = -2f;
     public float Ceiling = 42f;
 
+    private GeneType RandomGeneType(GeneType[] options)
+    {
+        return options[Random.Range(0, options.Length)];
+    }
+
+    private Gene CreateNewActionGene(ClimberGenetics genetics, Gene previousGene)
+    {
+        /*
+        GeneType actionType = GeneType.NonAction;
+        Gene actionGene = null;
+
+        if (previousGene == null)
+        {
+            actionType = RandomGeneType(new[] {
+                GeneType.GrabAction,
+                GeneType.ReleaseAction,
+                GeneType.SwingAction,
+                GeneType.NonAction,
+            });
+        }
+        else if (previousGene.Type == GeneType.GrabAction)
+        {
+            actionType = RandomGeneType(new[] {
+                GeneType.SwingAction,
+                GeneType.NonAction,
+            });
+        }
+        else if (previousGene.Type == GeneType.ReleaseAction)
+        {
+            actionType = GeneType.NonAction;
+        }
+        else if (previousGene.Type == GeneType.SwingAction)
+        {
+            actionType = GeneType.NonAction;
+        }
+        else if (previousGene.Type == GeneType.NonAction)
+        {
+            actionType = RandomGeneType(new[] {
+                GeneType.GrabAction,
+                GeneType.ReleaseAction,
+            });
+        }*/
+
+        Gene actionGene = null;
+        GeneType actionType = RandomGeneType(new[] {
+            GeneType.GrabAction,
+            GeneType.ReleaseAction,
+            GeneType.SwingAction,
+            GeneType.NonAction,
+        });
+
+        if (actionType == GeneType.GrabAction)
+        {
+            Vector3 localPoint = Vector3.zero;
+            int index = Random.Range(0, 4);
+
+            if (index == 0)
+                localPoint = new Vector3(-0.5f, -0.5f, 0f);
+            else if (index == 1)
+                localPoint = new Vector3(0.5f, -0.5f, 0f);
+            else if (index == 2)
+                localPoint = new Vector3(0.5f, 0.5f, 0f);
+            else if (index == 3)
+                localPoint = new Vector3(-0.5f, 0.5f, 0f);
+
+            actionGene = new GrabActionGene(localPoint);
+        }
+        else if (actionType == GeneType.ReleaseAction)
+        {
+            actionGene = new ReleaseActionGene();
+        }
+        else if (actionType == GeneType.SwingAction)
+        {
+            BodyShapeGene bodyShapeGene = (BodyShapeGene)genetics.Chromosome[0];
+            Vector3 localApplyAtPoint = new Vector3(
+                Random.Range(-bodyShapeGene.Width * 0.5f, bodyShapeGene.Width * 0.5f),
+                Random.Range(-bodyShapeGene.Height * 0.5f, bodyShapeGene.Height * 0.5f),
+                0f);
+            int direction = Random.Range(0, 2) == 0 ? -1 : 1;
+            float strength = Random.Range(MinSwingStrength, MaxSwingStrength);
+
+            actionGene = new SwingActionGene(localApplyAtPoint, direction, strength);
+        }
+        else if (actionType == GeneType.NonAction)
+        {
+            actionGene = new NonActionGene(Random.Range(MinNonActionTime, MaxNonActionTime));
+        }
+
+        return actionGene;
+    }
+
     private void CreateFirstGeneration()
     {
         population = new List<ClimberGenetics>(PopulationSize);
@@ -47,50 +138,15 @@ public class GeneticAlgorithm : MonoBehaviour
             BodyShapeGene bodyShapeGene = new BodyShapeGene(
                 Random.Range(MinBodyWidth, MaxBodyWidth),
                 Random.Range(MinBodyHeight, MaxBodyHeight));
+            Gene previousAction = null;
 
             genetics.Chromosome.Add(bodyShapeGene);
 
             for (int j = 0; j < numActions; j++)
             {
-                GeneType actionType = (GeneType)Random.Range(1, 5);
-                Gene actionGene = null;
+                Gene actionGene = CreateNewActionGene(genetics, previousAction);
 
-                if (actionType == GeneType.GrabAction)
-                {
-                    Vector3 localPoint = Vector3.zero;
-                    int index = Random.Range(0, 4);
-
-                    if (index == 0)
-                        localPoint = new Vector3(-0.5f, -0.5f, 0f);
-                    else if (index == 1)
-                        localPoint = new Vector3(0.5f, -0.5f, 0f);
-                    else if (index == 2)
-                        localPoint = new Vector3(0.5f, 0.5f, 0f);
-                    else if (index == 3)
-                        localPoint = new Vector3(-0.5f, 0.5f, 0f);
-
-                    actionGene = new GrabActionGene(localPoint);
-                }
-                else if (actionType == GeneType.ReleaseAction)
-                {
-                    actionGene = new ReleaseActionGene();
-                }
-                else if (actionType == GeneType.SwingAction)
-                {
-                    Vector3 localApplyAtPoint = new Vector3(
-                        Random.Range(-bodyShapeGene.Width * 0.5f, bodyShapeGene.Width * 0.5f),
-                        Random.Range(-bodyShapeGene.Height * 0.5f, bodyShapeGene.Height * 0.5f),
-                        0f);
-                    int direction = Random.Range(0, 2) == 0 ? -1 : 1;
-                    float strength = Random.Range(MinSwingStrength, MaxSwingStrength);
-
-                    actionGene = new SwingActionGene(localApplyAtPoint, direction, strength);
-                }
-                else if (actionType == GeneType.NonAction)
-                {
-                    actionGene = new NonActionGene(Random.Range(MinNonActionTime, MaxNonActionTime));
-                }
-
+                previousAction = actionGene;
                 genetics.Chromosome.Add(actionGene);
             }
 
@@ -104,6 +160,15 @@ public class GeneticAlgorithm : MonoBehaviour
     {
         List<ClimberGenetics> newPopulation = new List<ClimberGenetics>(PopulationSize);
         List<ClimberGenetics> sourcePopulation = new List<ClimberGenetics>(population);
+        float averageFitness = 0f;
+        float highestGenFitness = 0f;
+
+        foreach (ClimberGenetics genetics in population)
+        {
+            averageFitness += genetics.FitnessScore;
+            highestGenFitness = Mathf.Max(highestGenFitness, genetics.FitnessScore);
+        }
+        averageFitness /= population.Count;
 
         while (newPopulation.Count < PopulationSize)
         {
@@ -153,6 +218,10 @@ public class GeneticAlgorithm : MonoBehaviour
             newPopulation.Add(a);
             newPopulation.Add(b);
         }
+
+        Logger.Add("Average fitness for generation " + currentGeneration + ": " + averageFitness);
+        Logger.Add("Highest fitness for generation " + currentGeneration + ": " + highestGenFitness);
+        Logger.Add("Highest all-time fitness: " + highestFitness);
 
         currentGeneration++;
         population.Clear();
@@ -246,20 +315,28 @@ public class GeneticAlgorithm : MonoBehaviour
     {
         GameObject climberObj;
         Climber climber;
+        ClimberGenetics genetics = population[currentPopulationIndex];
+        BodyShapeGene bodyShapeGene = (BodyShapeGene)genetics.Chromosome[0];
 
         isRunningFitnessTest = true;
 
         climberObj = Instantiate<GameObject>(ClimberPrefab);
         climberObj.transform.parent = objectsContainer;
-        climberObj.transform.position = SpawnPosition;
+        climberObj.transform.position = SpawnPosition - new Vector3(0f, bodyShapeGene.Height * 0.5f, 0f);
         climber = climberObj.GetComponentInChildren<Climber>();
-        climber.Genetics = population[currentPopulationIndex];
+        climber.Genetics = genetics;
         currentClimber = climber;
     }
 
     private float GetFitnessScore(Climber climber)
     {
-        return climber.MaxY;
+        float climbScore = Mathf.Pow(climber.ClimbAmount * 10f, 1.2f);
+        float nonGrabTimeScore = Mathf.Pow(climber.NonGrabTime * 10f, 1.2f);
+        float maxYScore = Mathf.Pow(climber.MaxY, 2.5f);
+        float score = climbScore + nonGrabTimeScore + maxYScore;
+
+        highestFitness = Mathf.Max(highestFitness, score);
+        return score;
     }
 
     public void EndFitnessTest()

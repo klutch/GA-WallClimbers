@@ -12,6 +12,9 @@ public class Climber : MonoBehaviour
     private float maxY = 0;
     private float sumY = 0;
     private int sumYCount = 0;
+    private float climbAmount;
+    private Vector3 previousPosition;
+    private float nonGrabTime;
 
     public ClimberGenetics Genetics;
     public GameObject Pin;
@@ -19,13 +22,11 @@ public class Climber : MonoBehaviour
 
     public float MaxY { get { return maxY; } }
     public float AverageY { get { return sumY / (float)sumYCount; } }
+    public float ClimbAmount { get { return climbAmount; } }
+    public float NonGrabTime { get { return nonGrabTime; } }
 
     private bool IsDone()
     {
-        maxY = Mathf.Max(maxY, transform.position.y);
-        sumY += transform.position.y;
-        sumYCount++;
-
         if (transform.position.y < GeneticAlgorithm.Instance.Floor)
             return true;
         else if (transform.position.y > GeneticAlgorithm.Instance.Ceiling)
@@ -89,6 +90,24 @@ public class Climber : MonoBehaviour
         currentActionIndex = (currentActionIndex + 1) % actionGenes.Count;
     }
 
+    private void TrackStatus()
+    {
+        float yDiff = transform.position.y - previousPosition.y;
+
+        if (yDiff > 0 && grabJoint == null)
+            climbAmount += yDiff;
+
+        if (grabJoint == null)
+            nonGrabTime += Time.fixedDeltaTime;
+
+        maxY = Mathf.Max(maxY, transform.position.y);
+
+        sumY += transform.position.y;
+        sumYCount++;
+
+        previousPosition = transform.position;
+    }
+
     void Start()
     {
         bodyShapeGene = (BodyShapeGene)Genetics.Chromosome[0];
@@ -99,6 +118,7 @@ public class Climber : MonoBehaviour
             actionGenes.Add(Genetics.Chromosome[i]);
 
         transform.localScale = new Vector3(bodyShapeGene.Width, bodyShapeGene.Height, 1f);
+        previousPosition = transform.position;
     }
 
     void FixedUpdate()
@@ -107,6 +127,7 @@ public class Climber : MonoBehaviour
             GeneticAlgorithm.Instance.EndFitnessTest();
         else
         {
+            TrackStatus();
             ProcessActions();
             TimeToLive = Mathf.Max(TimeToLive - Time.fixedDeltaTime, 0f);
         }

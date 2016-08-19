@@ -6,7 +6,7 @@ public class Logger : MonoBehaviour
 {
     private static Logger logger;
     private Text textComponent;
-    private int lineCount;
+    private int lineCount = 0;
 
     void Awake()
     {
@@ -16,13 +16,16 @@ public class Logger : MonoBehaviour
 
     public static void Add(string text)
     {
-        if (logger.lineCount > 60)
-        {
-            logger.textComponent.text = "";
-            logger.lineCount = 0;
-        }
-
         logger.textComponent.text += text + "\n";
         logger.lineCount++;
+
+        if (logger.lineCount > 40)
+        {
+            int newLineIndex = logger.textComponent.text.IndexOf("\n");
+            int startIndex = newLineIndex + 1;
+            int length = logger.textComponent.text.Length - startIndex;
+            logger.textComponent.text = logger.textComponent.text.Substring(startIndex, length);
+            logger.lineCount--;
+        }
     }
 }
