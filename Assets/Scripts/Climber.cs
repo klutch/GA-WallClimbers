@@ -9,12 +9,23 @@ public class Climber : MonoBehaviour
     private float nextActionTime;
     private HingeJoint grabJoint;
     private Rigidbody body;
+    private float maxY = 0;
+    private float sumY = 0;
+    private int sumYCount = 0;
 
     public ClimberGenetics Genetics;
+    public GameObject Pin;
     public float TimeToLive = 5f;
+
+    public float MaxY { get { return maxY; } }
+    public float AverageY { get { return sumY / (float)sumYCount; } }
 
     private bool IsDone()
     {
+        maxY = Mathf.Max(maxY, transform.position.y);
+        sumY += transform.position.y;
+        sumYCount++;
+
         if (transform.position.y < GeneticAlgorithm.Instance.Floor)
             return true;
         else if (transform.position.y > GeneticAlgorithm.Instance.Ceiling)
@@ -35,12 +46,14 @@ public class Climber : MonoBehaviour
         {
             GrabActionGene grabActionGene = (GrabActionGene)actionGene;
 
-            if (grabJoint == null)
+            if (grabJoint == null && transform.position.y > 0)
             {
                 grabJoint = gameObject.AddComponent<HingeJoint>();
                 grabJoint.axis = new Vector3(0f, 0f, 1f);
                 grabJoint.enablePreprocessing = false;
                 grabJoint.anchor = grabActionGene.LocalPoint;
+                Pin.SetActive(true);
+                Pin.transform.position = transform.TransformPoint(grabActionGene.LocalPoint);
             }
         }
         else if (actionGene.Type == GeneType.ReleaseAction)
@@ -49,6 +62,7 @@ public class Climber : MonoBehaviour
             {
                 Destroy(grabJoint);
                 grabJoint = null;
+                Pin.SetActive(false);
             }
         }
         else if (actionGene.Type == GeneType.SwingAction)

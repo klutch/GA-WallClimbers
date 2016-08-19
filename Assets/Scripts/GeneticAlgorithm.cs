@@ -12,7 +12,7 @@ public class GeneticAlgorithm : MonoBehaviour
     private int currentPopulationIndex;
     private Climber currentClimber;
     private Transform objectsContainer;
-    //private Dictionary<ClimberGenetics, float> fitnessScores;
+    private float highestFitness;
     private bool paused;
 
     public GameObject ClimberPrefab;
@@ -57,12 +57,19 @@ public class GeneticAlgorithm : MonoBehaviour
 
                 if (actionType == GeneType.GrabAction)
                 {
-                    Vector3 localGrabPoint = new Vector3(
-                        Random.Range(-bodyShapeGene.Width * 0.5f, bodyShapeGene.Width * 0.5f),
-                        Random.Range(-bodyShapeGene.Height * 0.5f, bodyShapeGene.Height * 0.5f),
-                        0f);
+                    Vector3 localPoint = Vector3.zero;
+                    int index = Random.Range(0, 4);
 
-                    actionGene = new GrabActionGene(localGrabPoint);
+                    if (index == 0)
+                        localPoint = new Vector3(-0.5f, -0.5f, 0f);
+                    else if (index == 1)
+                        localPoint = new Vector3(0.5f, -0.5f, 0f);
+                    else if (index == 2)
+                        localPoint = new Vector3(0.5f, 0.5f, 0f);
+                    else if (index == 3)
+                        localPoint = new Vector3(-0.5f, 0.5f, 0f);
+
+                    actionGene = new GrabActionGene(localPoint);
                 }
                 else if (actionType == GeneType.ReleaseAction)
                 {
@@ -181,12 +188,24 @@ public class GeneticAlgorithm : MonoBehaviour
         }
         else if (gene.Type == GeneType.GrabAction)
         {
-            GrabActionGene grabActionGene = (GrabActionGene)gene;
+            if (Random.Range(0f, 1f) < MutationStrength)
+            {
+                GrabActionGene grabActionGene = (GrabActionGene)gene;
+                BodyShapeGene bodyShapeGene = (BodyShapeGene)genetics.Chromosome[0];
+                Vector3 localPoint = Vector3.zero;
+                int index = Random.Range(0, 4);
 
-            grabActionGene.LocalPoint = new Vector3(
-                grabActionGene.LocalPoint.x + grabActionGene.LocalPoint.x * Random.Range(-MutationStrength, MutationStrength),
-                grabActionGene.LocalPoint.y + grabActionGene.LocalPoint.y * Random.Range(-MutationStrength, MutationStrength),
-                grabActionGene.LocalPoint.z);
+                if (index == 0)
+                    localPoint = new Vector3(-0.5f, -0.5f, 0f);
+                else if (index == 1)
+                    localPoint = new Vector3(0.5f, -0.5f, 0f);
+                else if (index == 2)
+                    localPoint = new Vector3(0.5f, 0.5f, 0f);
+                else if (index == 3)
+                    localPoint = new Vector3(-0.5f, 0.5f, 0f);
+
+                grabActionGene.LocalPoint = localPoint;
+            }
         }
         else if (gene.Type == GeneType.ReleaseAction)
         {
@@ -233,27 +252,24 @@ public class GeneticAlgorithm : MonoBehaviour
         climberObj = Instantiate<GameObject>(ClimberPrefab);
         climberObj.transform.parent = objectsContainer;
         climberObj.transform.position = SpawnPosition;
-        climber = climberObj.GetComponent<Climber>();
+        climber = climberObj.GetComponentInChildren<Climber>();
         climber.Genetics = population[currentPopulationIndex];
         currentClimber = climber;
     }
 
     private float GetFitnessScore(Climber climber)
     {
-        if (climber.transform.position.y < Floor)
-            return 0;
-        else
-            return Mathf.Max(climber.transform.position.y + climber.TimeToLive, 0f);
+        return climber.MaxY;
     }
 
     public void EndFitnessTest()
     {
         float score = GetFitnessScore(currentClimber);
 
-        Logger.Add("Climber [" + currentPopulationIndex + "] fitness: " + (int)score);
+        Logger.Add("[" + currentPopulationIndex + "] fitness: " + (int)score);
         isRunningFitnessTest = false;
         currentClimber.Genetics.FitnessScore = score;
-        Destroy(currentClimber.gameObject);
+        Destroy(currentClimber.transform.parent.gameObject);
         currentClimber = null;
         currentPopulationIndex++;
     }
