@@ -10,6 +10,7 @@ public class GeneticAlgorithm : MonoBehaviour
     private bool isRunningFitnessTest;
     private int currentGeneration;
     private int currentPopulationIndex;
+    private GameObject currentClimberObj;
     private Climber currentClimber;
     private Transform objectsContainer;
     private float highestFitness;
@@ -43,42 +44,6 @@ public class GeneticAlgorithm : MonoBehaviour
 
     private Gene CreateNewActionGene(ClimberGenetics genetics, Gene previousGene)
     {
-        /*
-        GeneType actionType = GeneType.NonAction;
-        Gene actionGene = null;
-
-        if (previousGene == null)
-        {
-            actionType = RandomGeneType(new[] {
-                GeneType.GrabAction,
-                GeneType.ReleaseAction,
-                GeneType.SwingAction,
-                GeneType.NonAction,
-            });
-        }
-        else if (previousGene.Type == GeneType.GrabAction)
-        {
-            actionType = RandomGeneType(new[] {
-                GeneType.SwingAction,
-                GeneType.NonAction,
-            });
-        }
-        else if (previousGene.Type == GeneType.ReleaseAction)
-        {
-            actionType = GeneType.NonAction;
-        }
-        else if (previousGene.Type == GeneType.SwingAction)
-        {
-            actionType = GeneType.NonAction;
-        }
-        else if (previousGene.Type == GeneType.NonAction)
-        {
-            actionType = RandomGeneType(new[] {
-                GeneType.GrabAction,
-                GeneType.ReleaseAction,
-            });
-        }*/
-
         Gene actionGene = null;
         GeneType actionType = RandomGeneType(new[] {
             GeneType.GrabAction,
@@ -163,13 +128,14 @@ public class GeneticAlgorithm : MonoBehaviour
         RouletteWheel rouletteWheel;
         float averageFitness = 0f;
         float highestGenFitness = 0f;
-        int numToKill = sourcePopulation.Count / 2;
+        int numToKill = sourcePopulation.Count / 8;
 
         // Calculate highest and average fitness
         foreach (ClimberGenetics genetics in population)
         {
             averageFitness += genetics.FitnessScore;
             highestGenFitness = Mathf.Max(highestGenFitness, genetics.FitnessScore);
+            highestFitness = Mathf.Max(highestFitness, genetics.FitnessScore);
         }
         averageFitness /= population.Count;
 
@@ -246,24 +212,6 @@ public class GeneticAlgorithm : MonoBehaviour
         population = newPopulation;
         Logger.Add("Created new genetic information for generation " + currentGeneration);
     }
-
-    /*
-    private ClimberGenetics SelectGenetics(List<ClimberGenetics> source)
-    {
-        RouletteWheel rouletteWheel = new RouletteWheel(source);
-        ClimberGenetics result;
-        float sumScores = 0;
-        float randScore = 0;
-
-        foreach (ClimberGenetics genetics in source)
-            sumScores += genetics.FitnessScore;
-
-        randScore = Random.Range(0f, sumScores);
-        result = rouletteWheel.GetResult(randScore);
-        source.Remove(result);
-
-        return result;
-    }*/
 
     private void MutateGene(ClimberGenetics genetics, Gene gene)
     {
@@ -345,6 +293,7 @@ public class GeneticAlgorithm : MonoBehaviour
         climber = climberObj.GetComponentInChildren<Climber>();
         climber.Genetics = genetics;
         currentClimber = climber;
+        currentClimberObj = climberObj;
     }
 
     private float GetFitnessScore(Climber climber)
@@ -369,6 +318,7 @@ public class GeneticAlgorithm : MonoBehaviour
         currentClimber.Genetics.FitnessScore = score;
         Destroy(currentClimber.transform.parent.gameObject);
         currentClimber = null;
+        currentClimberObj = null;
         currentPopulationIndex++;
     }
 
@@ -409,6 +359,23 @@ public class GeneticAlgorithm : MonoBehaviour
         objectsContainer = GameObject.FindGameObjectWithTag("Objects").transform;
         Application.runInBackground = true;
         Logger.Add("Press enter to begin simulation");
+    }
+
+    void FixedUpdate()
+    {
+        float minY = 7.45f;
+        Vector3 cameraPos = Camera.transform.position;
+        Vector3 targetPos = cameraPos;
+
+        if (currentClimberObj != null)
+            targetPos.y = Mathf.Max(currentClimberObj.transform.position.y, minY);
+
+        if (Mathf.Abs(targetPos.y - cameraPos.y) > 20f)
+            cameraPos.y = targetPos.y;
+        else
+            cameraPos.y = Mathf.Lerp(cameraPos.y, targetPos.y, 0.2f);
+
+        Camera.transform.position = cameraPos;
     }
 
     void Update()
