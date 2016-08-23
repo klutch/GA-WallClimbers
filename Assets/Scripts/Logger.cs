@@ -19,7 +19,7 @@ public class Logger : MonoBehaviour
         logger.textComponent.text += text + "\n";
         logger.lineCount++;
 
-        if (logger.lineCount > 40)
+        if (logger.lineCount > 60)
         {
             int newLineIndex = logger.textComponent.text.IndexOf("\n");
             int startIndex = newLineIndex + 1;

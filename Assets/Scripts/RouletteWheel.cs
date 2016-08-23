@@ -3,8 +3,6 @@ using System.Collections.Generic;
 
 public class RouletteWheel
 {
-    public List<RouletteWheelRange> Ranges;
-
     public struct RouletteWheelRange
     {
         public float Min;
@@ -19,24 +17,28 @@ public class RouletteWheel
         }
     }
 
+    private float totalScore = 0;
+
+    public List<RouletteWheelRange> Ranges;
+
     public RouletteWheel(List<ClimberGenetics> source)
     {
-        float scoreCounter = 0;
-
         Ranges = new List<RouletteWheelRange>();
 
         foreach (ClimberGenetics genetics in source)
         {
-            float min = scoreCounter;
-            float max = scoreCounter + genetics.FitnessScore;
+            float min = totalScore;
+            float max = totalScore + genetics.FitnessScore;
 
             Ranges.Add(new RouletteWheelRange(min, max, genetics));
-            scoreCounter = max;
+            totalScore = max;
         }
     }
 
-    public ClimberGenetics GetResult(float score)
+    public ClimberGenetics GetResult()
     {
+        float score = Random.Range(0f, totalScore);
+
         foreach (RouletteWheelRange range in Ranges)
         {
             if (score >= range.Min && score <= range.Max)

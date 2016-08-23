@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public class ClimberGenetics
 {
@@ -9,6 +10,17 @@ public class ClimberGenetics
     public ClimberGenetics()
     {
         Chromosome = new List<Gene>();
+    }
+
+    public ClimberGenetics Copy()
+    {
+        ClimberGenetics copy = new ClimberGenetics();
+
+        foreach (Gene gene in Chromosome)
+            copy.Chromosome.Add(gene.Copy());
+        copy.FitnessScore = FitnessScore;
+
+        return copy;
     }
 }
 
@@ -24,6 +36,8 @@ public enum GeneType
 public abstract class Gene
 {
     public GeneType Type;
+
+    public abstract Gene Copy();
 }
 
 public class BodyShapeGene : Gene
@@ -38,6 +52,11 @@ public class BodyShapeGene : Gene
         Height = height;
     }
 
+    public override Gene Copy()
+    {
+        return new BodyShapeGene(Width, Height);
+    }
+
     public override string ToString()
     {
         return "BodyShapeGene - Width: " + Width + ", Height: " + Height;
@@ -48,10 +67,15 @@ public class GrabActionGene : Gene
 {
     public Vector3 LocalPoint;
 
-    public GrabActionGene(Vector3 localGrabPoint)
+    public GrabActionGene(Vector3 localPoint)
     {
         Type = GeneType.GrabAction;
-        LocalPoint = localGrabPoint;
+        LocalPoint = localPoint;
+    }
+
+    public override Gene Copy()
+    {
+        return new GrabActionGene(LocalPoint);
     }
 
     public override string ToString()
@@ -65,6 +89,11 @@ public class ReleaseActionGene : Gene
     public ReleaseActionGene()
     {
         Type = GeneType.ReleaseAction;
+    }
+
+    public override Gene Copy()
+    {
+        return new ReleaseActionGene();
     }
 
     public override string ToString()
@@ -87,6 +116,11 @@ public class SwingActionGene : Gene
         LocalPoint = localPoint;
     }
 
+    public override Gene Copy()
+    {
+        return new SwingActionGene(LocalPoint, Direction, Strength);
+    }
+
     public override string ToString()
     {
         return "SwingActionGene - LocalPoint: " + LocalPoint +
@@ -103,6 +137,11 @@ public class NonActionGene : Gene
     {
         Type = GeneType.NonAction;
         Time = time;
+    }
+
+    public override Gene Copy()
+    {
+        return new NonActionGene(Time);
     }
 
     public override string ToString()

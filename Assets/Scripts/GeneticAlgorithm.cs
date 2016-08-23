@@ -160,9 +160,12 @@ public class GeneticAlgorithm : MonoBehaviour
     {
         List<ClimberGenetics> newPopulation = new List<ClimberGenetics>(PopulationSize);
         List<ClimberGenetics> sourcePopulation = new List<ClimberGenetics>(population);
+        RouletteWheel rouletteWheel;
         float averageFitness = 0f;
         float highestGenFitness = 0f;
+        int numToKill = sourcePopulation.Count / 2;
 
+        // Calculate highest and average fitness
         foreach (ClimberGenetics genetics in population)
         {
             averageFitness += genetics.FitnessScore;
@@ -170,53 +173,69 @@ public class GeneticAlgorithm : MonoBehaviour
         }
         averageFitness /= population.Count;
 
-        while (newPopulation.Count < PopulationSize)
+        // Sort based on fitness (most to least fit)
+        sourcePopulation.Sort((a, b) => { return a.FitnessScore > b.FitnessScore ? -1 : 1; });
+
+        // Before mating... KILL THE WEAK!@$
+        for (int i = 0; i < numToKill; i++)
         {
-            ClimberGenetics a = SelectGenetics(sourcePopulation);
-            ClimberGenetics b = SelectGenetics(sourcePopulation);
-            bool crossover = Random.Range(0f, 1f) < CrossoverRate;
+            ClimberGenetics deadbeat = sourcePopulation[sourcePopulation.Count - 1];
 
-            if (crossover)
+            Logger.Add("Killing individual with a score of: " + deadbeat.FitnessScore);
+            sourcePopulation.Remove(deadbeat);
+        }
+
+        rouletteWheel = new RouletteWheel(sourcePopulation);
+
+        // Add survivors to new population
+        newPopulation.AddRange(sourcePopulation);
+
+        // Let's fuuuuu
+        for (int i = 0; i < sourcePopulation.Count; i++)
+        {
+            ClimberGenetics parentA = sourcePopulation[i];
+            ClimberGenetics parentB = null;
+            ClimberGenetics child = null;
+
+            // Choose a partner (making sure it's not self)
+            while (parentB == null || parentB == parentA)
+                parentB = rouletteWheel.GetResult();
+
+            // Crossover genes from parents to child
+            if (Random.Range(0f, 1f) < CrossoverRate)
             {
-                int maxCrossoverIndex = Mathf.Min(a.Chromosome.Count, b.Chromosome.Count) - 1;
+                int maxCrossoverIndex = Mathf.Min(parentA.Chromosome.Count, parentB.Chromosome.Count) - 1;
                 int crossoverIndex = Random.Range(0, maxCrossoverIndex + 1);
-                int maxIndex = Mathf.Max(a.Chromosome.Count, b.Chromosome.Count);
-                List<Gene> aChromosome = new List<Gene>(a.Chromosome);
-                List<Gene> bChromosome = new List<Gene>(b.Chromosome);
+                int maxCount = Mathf.Max(parentA.Chromosome.Count, parentB.Chromosome.Count);
 
-                a.Chromosome.Clear();
-                b.Chromosome.Clear();
+                child = new ClimberGenetics();
 
-                for (int i = 0; i < maxIndex; i++)
+                for (int j = 0; j < maxCount; j++)
                 {
-                    if (i <= crossoverIndex)
+                    if (j < crossoverIndex)
                     {
-                        a.Chromosome.Add(aChromosome[i]);
-                        b.Chromosome.Add(bChromosome[i]);
+                        child.Chromosome.Add(parentA.Chromosome[j]);
                     }
                     else
                     {
-                        if (i < bChromosome.Count)
-                            a.Chromosome.Add(bChromosome[i]);
-                        if (i < aChromosome.Count)
-                            b.Chromosome.Add(aChromosome[i]);
+                        if (j < parentB.Chromosome.Count)
+                            child.Chromosome.Add(parentB.Chromosome[j]);
                     }
                 }
             }
-
-            foreach (Gene gene in a.Chromosome)
+            else
             {
-                if (Random.Range(0f, 1f) < MutationRate)
-                    MutateGene(a, gene);
-            }
-            foreach (Gene gene in b.Chromosome)
-            {
-                if (Random.Range(0f, 1f) < MutationRate)
-                    MutateGene(b, gene);
+                child = parentA.Copy();
             }
 
-            newPopulation.Add(a);
-            newPopulation.Add(b);
+            // Mutate genes
+            foreach (Gene gene in child.Chromosome)
+            {
+                if (Random.Range(0f, 1f) < MutationRate)
+                    MutateGene(child, gene);
+            }
+
+            newPopulation.Add(child);
         }
 
         Logger.Add("Average fitness for generation " + currentGeneration + ": " + averageFitness);
@@ -224,11 +243,11 @@ public class GeneticAlgorithm : MonoBehaviour
         Logger.Add("Highest all-time fitness: " + highestFitness);
 
         currentGeneration++;
-        population.Clear();
         population = newPopulation;
         Logger.Add("Created new genetic information for generation " + currentGeneration);
     }
 
+    /*
     private ClimberGenetics SelectGenetics(List<ClimberGenetics> source)
     {
         RouletteWheel rouletteWheel = new RouletteWheel(source);
@@ -244,7 +263,7 @@ public class GeneticAlgorithm : MonoBehaviour
         source.Remove(result);
 
         return result;
-    }
+    }*/
 
     private void MutateGene(ClimberGenetics genetics, Gene gene)
     {
@@ -330,13 +349,15 @@ public class GeneticAlgorithm : MonoBehaviour
 
     private float GetFitnessScore(Climber climber)
     {
+        return climber.MaxY;
+        /*
         float climbScore = Mathf.Pow(climber.ClimbAmount * 10f, 1.2f);
         float nonGrabTimeScore = Mathf.Pow(climber.NonGrabTime * 10f, 1.2f);
         float maxYScore = Mathf.Pow(climber.MaxY, 2.5f);
         float score = climbScore + nonGrabTimeScore + maxYScore;
 
         highestFitness = Mathf.Max(highestFitness, score);
-        return score;
+        return score;*/
     }
 
     public void EndFitnessTest()
