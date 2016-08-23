@@ -36,6 +36,7 @@ public class GeneticAlgorithm : MonoBehaviour
     public float MaxSwingStrength = 10f;
     public float Floor = -2f;
     public float Ceiling = 42f;
+    public int NumToKill = 6;
 
     private GeneType RandomGeneType(GeneType[] options)
     {
@@ -128,7 +129,6 @@ public class GeneticAlgorithm : MonoBehaviour
         RouletteWheel rouletteWheel;
         float averageFitness = 0f;
         float highestGenFitness = 0f;
-        int numToKill = sourcePopulation.Count / 8;
 
         // Calculate highest and average fitness
         foreach (ClimberGenetics genetics in population)
@@ -143,7 +143,7 @@ public class GeneticAlgorithm : MonoBehaviour
         sourcePopulation.Sort((a, b) => { return a.FitnessScore > b.FitnessScore ? -1 : 1; });
 
         // Before mating... KILL THE WEAK!@$
-        for (int i = 0; i < numToKill; i++)
+        for (int i = 0; i < NumToKill; i++)
         {
             ClimberGenetics deadbeat = sourcePopulation[sourcePopulation.Count - 1];
 
@@ -157,7 +157,7 @@ public class GeneticAlgorithm : MonoBehaviour
         newPopulation.AddRange(sourcePopulation);
 
         // Let's fuuuuu
-        for (int i = 0; i < sourcePopulation.Count; i++)
+        for (int i = 0; i < NumToKill; i++)
         {
             ClimberGenetics parentA = sourcePopulation[i];
             ClimberGenetics parentB = null;
@@ -367,7 +367,7 @@ public class GeneticAlgorithm : MonoBehaviour
         Vector3 targetPos = cameraPos;
 
         if (currentClimberObj != null)
-            targetPos.y = Mathf.Max(currentClimberObj.transform.position.y, minY);
+            targetPos.y = Mathf.Max(currentClimberObj.GetComponentInChildren<Climber>().transform.position.y, minY);
 
         if (Mathf.Abs(targetPos.y - cameraPos.y) > 20f)
             cameraPos.y = targetPos.y;

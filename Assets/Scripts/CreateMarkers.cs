@@ -13,6 +13,7 @@ public class CreateMarkers : MonoBehaviour
             GameObject marker = Instantiate<GameObject>(MarkerPrefab);
             TextMesh textMesh = marker.GetComponentInChildren<TextMesh>();
 
+            marker.transform.parent = GameObject.FindGameObjectWithTag("Objects").transform;
             marker.transform.position = marker.transform.position + new Vector3(0f, i, 0f);
             textMesh.text = i + "m";
         }
