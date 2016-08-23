@@ -22,9 +22,12 @@ public class Climber : MonoBehaviour
     private Vector3 boundsV3;
     private Vector3 boundsV4;
     private LineRenderer lineRenderer;
+    private TextMesh textMesh;
+    private bool firstFixedUpdate = true;
 
     public ClimberGenetics Genetics;
     public GameObject Pin;
+    public GameObject Text;
     public float TimeToLive = 3f;
 
     public float MaxY { get { return maxY; } }
@@ -127,8 +130,11 @@ public class Climber : MonoBehaviour
             Mathf.Max(boundsV1.y, boundsV2.y, boundsV3.y, boundsV4.y),
             0.1f);
 
+        // Let climbers who do well live longer
+        if (!firstFixedUpdate && upperBounds.y > maxY)
+            TimeToLive += (upperBounds.y - maxY) * 2f;
+
         // Max Y
-        //maxY = Mathf.Max(maxY, transform.position.y);
         maxY = Mathf.Max(maxY, upperBounds.y);
 
         previousPosition = transform.position;
@@ -148,12 +154,24 @@ public class Climber : MonoBehaviour
         lineRenderer.SetPosition(4, v1);
     }
 
+    private void SetTimeToLive()
+    {
+        TimeToLive = Mathf.Max(TimeToLive - Time.fixedDeltaTime, 0f);
+    }
+
+    private void UpdateTimeToLiveText()
+    {
+        Text.transform.position = transform.position;
+        textMesh.text = TimeToLive.ToString("0.0") + "s";
+    }
+
     void Start()
     {
         bodyShapeGene = (BodyShapeGene)Genetics.Chromosome[0];
         actionGenes = new List<Gene>();
         body = GetComponent<Rigidbody>();
         lineRenderer = transform.parent.GetComponent<LineRenderer>();
+        textMesh = Text.GetComponent<TextMesh>();
 
         for (int i = 1; i < Genetics.Chromosome.Count; i++)
             actionGenes.Add(Genetics.Chromosome[i]);
@@ -165,6 +183,7 @@ public class Climber : MonoBehaviour
     void Update()
     {
         DrawBounds();
+        UpdateTimeToLiveText();
     }
 
     void FixedUpdate()
@@ -175,7 +194,9 @@ public class Climber : MonoBehaviour
         {
             TrackStatus();
             ProcessActions();
-            TimeToLive = Mathf.Max(TimeToLive - Time.fixedDeltaTime, 0f);
+            SetTimeToLive();
         }
+
+        firstFixedUpdate = false;
     }
 }

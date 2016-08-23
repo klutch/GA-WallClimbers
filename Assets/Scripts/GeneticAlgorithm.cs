@@ -147,7 +147,7 @@ public class GeneticAlgorithm : MonoBehaviour
         {
             ClimberGenetics deadbeat = sourcePopulation[sourcePopulation.Count - 1];
 
-            Logger.Add("Killing individual with a score of: " + deadbeat.FitnessScore);
+            Logger.Add("Killing individual with a score of: " + deadbeat.FitnessScore.ToString("0.00"));
             sourcePopulation.Remove(deadbeat);
         }
 
@@ -204,9 +204,9 @@ public class GeneticAlgorithm : MonoBehaviour
             newPopulation.Add(child);
         }
 
-        Logger.Add("Average fitness for generation " + currentGeneration + ": " + averageFitness);
-        Logger.Add("Highest fitness for generation " + currentGeneration + ": " + highestGenFitness);
-        Logger.Add("Highest all-time fitness: " + highestFitness);
+        Logger.Add("Average fitness for generation " + currentGeneration + ": " + averageFitness.ToString("0.00"));
+        Logger.Add("Highest fitness for generation " + currentGeneration + ": " + highestGenFitness.ToString("0.00"));
+        Logger.Add("Highest all-time fitness: " + highestFitness.ToString("0.00"));
 
         currentGeneration++;
         population = newPopulation;
@@ -227,7 +227,6 @@ public class GeneticAlgorithm : MonoBehaviour
             if (Random.Range(0f, 1f) < MutationStrength)
             {
                 GrabActionGene grabActionGene = (GrabActionGene)gene;
-                BodyShapeGene bodyShapeGene = (BodyShapeGene)genetics.Chromosome[0];
                 Vector3 localPoint = Vector3.zero;
                 int index = Random.Range(0, 4);
 
@@ -313,7 +312,7 @@ public class GeneticAlgorithm : MonoBehaviour
     {
         float score = GetFitnessScore(currentClimber);
 
-        Logger.Add("[" + currentPopulationIndex + "] fitness: " + (int)score);
+        Logger.Add("[" + currentPopulationIndex + "] fitness: " + score.ToString("0.00"));
         isRunningFitnessTest = false;
         currentClimber.Genetics.FitnessScore = score;
         Destroy(currentClimber.transform.parent.gameObject);
